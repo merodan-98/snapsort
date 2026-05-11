@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSort - Standalone Web</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="model_data.js"></script>
+    <style>
+        :root {
+            --primary: #5E6AD2;
+            --secondary: #97A0F0;
+            --bg-color: #0F172A;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-color: #E2E8F0;
+        }
+
+        body {
+            margin: 0; margin-top: 5vh;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, var(--bg-color), #202b46);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            background: -webkit-linear-gradient(45deg, var(--secondary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle { color: #94A3B8; margin-bottom: 25px; }
+
+        .upload-area {
+            border: 2px dashed rgba(148, 163, 184, 0.4);
+            border-radius: 16px;
+            padding: 50px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(94, 106, 210, 0.1);
+        }
+        .upload-area input { display: none; }
+        .upload-icon { font-size: 3rem; display: block; margin-bottom: 15px;}
+        .upload-text { font-weight: 600; font-size: 1.1rem; color: var(--secondary); }
+        .upload-hint { font-size: 0.9rem; color: #64748B; margin-top: 10px; }
+
+        .result-area { display: none; margin-top: 30px; animation: fadeIn 0.5s ease; }
+        .result-image { width: 100%; max-height: 280px; object-fit: contain; border-radius: 12px; margin-bottom: 20px; }
+
+        .badge {
+            display: inline-block; padding: 10px 24px; border-radius: 30px; font-size: 1.5rem; font-weight: 800; text-transform: uppercase;
+        }
+        .badge.finance { background: linear-gradient(135deg, #10B981, #059669); box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); }
+        .badge.game { background: linear-gradient(135deg, #F43F5E, #E11D48); box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.39); }
+        .badge.person { background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.39); }
+
+        .reset-btn { margin-top: 25px; background: transparent; border: 1px solid var(--secondary); color: var(--secondary); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .reset-btn:hover { background: var(--secondary); color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .decor-circle { position: fixed; border-radius: 50%; filter: blur(80px); z-index: 1; }
+        .dc-1 { width: 400px; height: 400px; background: rgba(94, 106, 210, 0.4); top: -100px; left: -100px; }
+        .dc-2 { width: 300px; height: 300px; background: rgba(244, 63, 94, 0.3); bottom: -50px; right: -50px; }
+    </style>
+</head>
+<body>
+    <div class="decor-circle dc-1"></div>
+    <div class="decor-circle dc-2"></div>
+
+    <div class="container">
+        <h1>SnapSort</h1>
+        <p class="subtitle">서버리스 클라이언트 단독 실행 버전 (JS-KNN)</p>
+        <p id="modelStatus" style="color: #10B981; font-weight: bold; font-size: 0.9em; margin-top: -15px;">⏳ 파이썬 패턴 모델 로드 중...</p>
+
+        <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">📂</span>
+            <span class="upload-text">사진을 클릭하거나 끌어다 놓으세요</span>
+            <div class="upload-hint">인터넷 연결 여부와 상관없이 즉시 분석합니다!</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="result-area" id="resultArea">
+            <img src="" id="resultImg" class="result-image">
+            <div class="badge" id="categoryBadge">CATEGORY</div><br>
+            <button class="reset-btn" onclick="resetUI()">새로운 사진 분석하기</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(typeof KNNDataset !== 'undefined') {
+                document.getElementById('modelStatus').innerText = `✅ 학습 완료 (훈련 데이터: ${KNNDataset.length}개 기억됨)`;
+            } else {
+                document.getElementById('modelStatus').innerText = "❌ model_data.js를 불러오지 못했습니다.";
+                document.getElementById('modelStatus').style.color = "#F43F5E";
+            }
+        });
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const resultArea = document.getElementById('resultArea');
+        const resultImg = document.getElementById('resultImg');
+        const categoryBadge = document.getElementById('categoryBadge');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => {
+            uploadArea.addEventListener(eName, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+        ['dragenter', 'dragover'].forEach(eName => uploadArea.addEventListener(eName, () => uploadArea.classList.add('dragover')));
+        ['dragleave', 'drop'].forEach(eName => uploadArea.addEventListener(eName, () => uploadArea.classList.remove('dragover')));
+        
+        uploadArea.addEventListener('drop', e => processFile(e.dataTransfer.files[0]));
+        fileInput.addEventListener('change', e => processFile(e.target.files[0]));
+
+        function processFile(file) {
+            if(!file || typeof KNNDataset === 'undefined') return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imgUrl = e.target.result;
+                const img = new Image();
+                img.onload = () => {
+                    const label = runPrediction(img);
+                    showResult(imgUrl, label);
+                };
+                img.src = imgUrl;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 파이썬으로 짰던거 JS로 쌩노가다 이식함 ㅋㅋ (Numpy 배열, 유클리디안 거리, 리사이즈 이런거 다 직접구현)
+        function runPrediction(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 32, 32);
+            const pixels = ctx.getImageData(0, 0, 32, 32).data;
+            
+            let hist = new Array(512).fill(0);
+            for(let i = 0; i < pixels.length; i += 4) {
+                let rBin = Math.min(Math.floor((pixels[i] / 256) * 8), 7);
+                let gBin = Math.min(Math.floor((pixels[i+1] / 256) * 8), 7);
+                let bBin = Math.min(Math.floor((pixels[i+2] / 256) * 8), 7);
+                let flatIndex = (rBin * 64) + (gBin * 8) + bBin;
+                hist[flatIndex]++;
+            }
+            
+            let sum = hist.reduce((a,b)=>a+b, 0);
+            if(sum > 0) hist = hist.map(x => x / sum);
+
+            let distances = [];
+            for(let train of KNNDataset) {
+                let distAccum = 0;
+                for(let i=0; i<512; i++) {
+                    let diff = hist[i] - train.vector[i];
+                    distAccum += diff * diff;
+                }
+                distances.push({ dist: Math.sqrt(distAccum), label: train.label });
+            }
+            
+            distances.sort((a,b) => a.dist - b.dist);
+            let top5 = distances.slice(0, 5);
+            let votes = {};
+            top5.forEach(v => votes[v.label] = (votes[v.label] || 0) + 1);
+            return Object.keys(votes).reduce((a,b) => votes[a] > votes[b] ? a : b);
+        }
+
+        function showResult(url, category) {
+            uploadArea.style.display = 'none';
+            resultImg.src = url;
+            categoryBadge.innerText = category;
+            categoryBadge.className = 'badge ' + category;
+            resultArea.style.display = 'block';
+        }
+
+        function resetUI() {
+            resultArea.style.display = 'none';
+            uploadArea.style.display = 'block';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>

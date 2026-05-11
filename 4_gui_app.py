@@ -4,14 +4,14 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import importlib.util
 
-# 1. 모델과 핵심 헬퍼 로드
+# 1. 뼈대되는 내 모델 불러오기
 spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
 knn = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(knn)
 SimpleKNNClassifier = knn.SimpleKNNClassifier
 
 def get_evaluation_stats(dataset_dir):
-    """서버 구동 시와 마찬가지로 모의 평가를 통해 성능(Accuracy)을 알아옵니다."""
+    # 띄우기 전에 전체 데이터 모의평가 돌려서 정확도 뽑아오는 함수
     try:
         from train_loader import load_full_dataset
         import random
@@ -41,43 +41,43 @@ def get_evaluation_stats(dataset_dir):
 class SnapSortGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("SnapSort - 순수 파이썬 데스크톱 시연기")
+        self.root.title("SnapSort - 순수 파이썬 데스크톱 시연기 (내가 만듦)")
         self.root.geometry("600x700")
         self.root.configure(bg="#f0f0f0")
         
-        # UI 레이아웃 설정
+        # 화면 꾸미기
         title = tk.Label(root, text="SnapSort Image Classifier", font=("Helvetica", 20, "bold"), bg="#f0f0f0", fg="#333")
         title.pack(pady=20)
         
-        self.stats_label = tk.Label(root, text="모델 로딩 중...", font=("Helvetica", 11), bg="#f0f0f0", fg="blue")
+        self.stats_label = tk.Label(root, text="모델 로딩중 (좀만 기다리셈)...", font=("Helvetica", 11), bg="#f0f0f0", fg="blue")
         self.stats_label.pack(pady=5)
         
-        # 이미지 업로드 버튼
+        # 버튼 하나 만듦
         self.upload_btn = tk.Button(root, text="이미지 파일 열기", command=self.upload_image, font=("Helvetica", 12), bg="#4caf50", fg="white", padx=20, pady=10)
         self.upload_btn.pack(pady=20)
         
-        # 이미지 표시 영역
+        # 여기다 이미지 띄울거임
         self.image_label = tk.Label(root, bg="#ddd", width=60, height=20)
         self.image_label.pack(pady=10)
         
-        # 결과 표시 라벨
-        self.result_label = tk.Label(root, text="이미지를 업로드하면 결과가 나옵니다.", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
+        # 결과 나오는 텍스트
+        self.result_label = tk.Label(root, text="이미지 올리면 결과 나옴.", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
         self.result_label.pack(pady=20)
         
-        # 실제 모델 데이터 불러오기 (비동기 대신 직접 로드)
+        # 로딩 끝나면 정보 띄워줌
         base_dir = os.path.dirname(os.path.abspath(__file__))
         dataset_dir = os.path.join(base_dir, 'dataset_augmented')
         
         self.model, self.accuracy, self.total_data = get_evaluation_stats(dataset_dir)
         
         if self.model:
-            self.stats_label.config(text=f"✅ 총 데이터: {self.total_data}장 | 개발 프로그램 성능(평균 인식률): {self.accuracy:.2f}%")
+            self.stats_label.config(text=f"✅ 총 데이터: {self.total_data}장 | 내 프로그램 평균 정확도: {self.accuracy:.2f}%")
         else:
-            self.stats_label.config(text="⚠️ 모델 구동 실패. dataset_augmented 폴더를 확인하세요.", fg="red")
+            self.stats_label.config(text="⚠️ 모델 구동 실패함.. 데이터셋 폴더 있나 확인 ㄱㄱ", fg="red")
 
     def upload_image(self):
         if not self.model:
-            messagebox.showerror("오류", "모델이 초기화되지 않았습니다.")
+            messagebox.showerror("에러", "모델 아직 로딩 안됐음")
             return
             
         file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.jpg *.jpeg *.png *.webp")])
@@ -85,25 +85,25 @@ class SnapSortGUI:
             return
             
         try:
-            # 1. 이미지 화면에 띄우기
+            # 1. 썸네일 만들어서 화면에 띄우기 (안그러면 원본 크기로 나와서 화면 뚫음)
             img = Image.open(file_path)
-            img.thumbnail((400, 400)) # 화면 비율에 맞게 리사이징
+            img.thumbnail((400, 400)) 
             photo = ImageTk.PhotoImage(img)
             self.image_label.config(image=photo, width=400, height=400)
-            self.image_label.image = photo # 가비지 컬렉터 방지용 참조 저장
+            self.image_label.image = photo # 가비지 컬렉터가 안날려먹게 꽉잡고있기
             
-            # 2. 특징 추출 및 예측
+            # 2. 특징 뽑고 예측 돌리기
             feature = self.model.extract_features(file_path)
             predictions = self.model.predict([feature])
             result = predictions[0]
             
-            # 3. 색상 및 텍스트 표시
+            # 3. 결과에 맞게 글자 색 바꿔서 이쁘게 보여줌
             colors = {"game": "#F43F5E", "finance": "#10B981", "person": "#F59E0B"}
             color = colors.get(result, "#333")
             self.result_label.config(text=f"분류 결과: [ {result.upper()} ]", fg=color)
             
         except Exception as e:
-            messagebox.showerror("오류", f"이미지 처리 중 오류가 발생했습니다: {e}")
+            messagebox.showerror("에러", f"이미지 처리하다 터짐: {e}")
 
 if __name__ == '__main__':
     root = tk.Tk()

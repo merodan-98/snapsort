@@ -2,25 +2,25 @@ import os
 from flask import Flask, render_template, request, jsonify
 import importlib.util
 
-# 2_knn_classifier 로드
+# 내 knn 모델 끌어오기
 spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
 knn = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(knn)
 SimpleKNNClassifier = knn.SimpleKNNClassifier
 
 app = Flask(__name__)
-# 웹에서 업로드된 파일이 임시 저장될 폴더
+# 웹에서 파일 올리면 잠깐 저장해둘 폴더
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# 서버 시작 시 모델을 평가하고 전역 변수에 저장합니다.
-print("[Boot] 데이터셋 특징 추출 및 평가 준비 중...")
+# 서버 켤 때 모델 미리 세팅해놓음 (안그러면 렉걸림)
+print("서버 켜는중... 데이터 특징 뽑는중이라 좀 걸릴수있음ㅇㅇ")
 from train_loader import load_full_dataset
 import random
 
 X, y = load_full_dataset('dataset_augmented')
 combined = list(zip(X, y))
-random.seed(42)  # 개발 모드에서 일관된 성능을 보기 위함
+random.seed(42)  # 새로고침할때마다 정확도 바뀌면 쪽팔리니까 고정
 random.shuffle(combined)
 split_index = int(len(combined) * 0.8)
 
@@ -31,12 +31,12 @@ X_test, y_test = [i[0] for i in test_data], [i[1] for i in test_data]
 model = SimpleKNNClassifier(k=5)
 model.fit(X_train, y_train)
 
-# 자체 평가 수행
+# 발표할때 화면에 띄워줄 용도로 자체 평가 한번 돌림
 predictions = model.predict(X_test)
 correct = sum(1 for t, p in zip(y_test, predictions) if t == p)
 global_accuracy = (correct / len(y_test)) * 100
 total_samples = len(X)
-print(f"[Boot] Flask 서버 초기화 완료! 정확도: {global_accuracy:.2f}%")
+print(f"플라스크 서버 준비완료!! 현재 정확도: {global_accuracy:.2f}%")
 
 @app.route('/')
 def index():
@@ -56,9 +56,8 @@ def predict():
         file.save(file_path)
         
         try:
-            # 방금 업로드된 파일 특징 추출
+            # 방금 올린 파일 특징 바로 뽑아서 예측 돌리기
             feature = model.extract_features(file_path)
-            # 예측
             predictions = model.predict([feature])
             result_category = predictions[0]
             

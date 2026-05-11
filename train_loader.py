@@ -7,7 +7,7 @@ spec.loader.exec_module(knn)
 SimpleKNNClassifier = knn.SimpleKNNClassifier
 
 def load_full_dataset(dataset_dir):
-    """ 웹 서버 구동 시 전체 데이터를 미리 메모리에 적재하는 헬퍼 함수 """
+    # 웹서버 켤때마다 매번 데이터 뽑기 귀찮아서 만든 헬퍼 함수
     X, y = [], []
     categories = ['game', 'person', 'finance']
     classifier = SimpleKNNClassifier() 
