@@ -1,13 +1,13 @@
 import os
 import pickle
 import datetime
-
 import importlib.util
-# 내가 만든 knn 모듈 임포트
-spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
-knn = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(knn)
-SimpleKNNClassifier = knn.SimpleKNNClassifier
+
+# 2_perceptron_classifier.py 임포트해옴
+spec = importlib.util.spec_from_file_location("perceptron", "2_perceptron_classifier.py")
+perceptron = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(perceptron)
+SimpleSLPClassifier = perceptron.SimpleSLPClassifier
 
 def write_log(message, log_file):
     print(message)
@@ -17,7 +17,7 @@ def write_log(message, log_file):
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(base_dir, 'knn_model.pkl')
+    model_path = os.path.join(base_dir, 'perceptron_model.pkl')
     test_data_path = os.path.join(base_dir, 'test_dataset.pkl')
     log_file = os.path.join(base_dir, 'test_log.txt')
     
@@ -25,16 +25,16 @@ def main():
     if os.path.exists(log_file):
         os.remove(log_file)
         
-    write_log(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 성능 평가 시작", log_file)
+    write_log(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 퍼셉트론 성능 평가 시작", log_file)
     
     # 모델 파일 없으면 에러내고 종료
     if not os.path.exists(model_path) or not os.path.exists(test_data_path):
-        write_log("에러: knn_model.pkl 파일이 없음. train.py부터 먼저 돌려주세요.", log_file)
+        write_log("에러: perceptron_model.pkl 파일이 없음. train.py부터 먼저 돌려주세요.", log_file)
         return
         
-    write_log("저장된 모델이랑 테스트 데이터 불러오는 중...", log_file)
+    write_log("저장된 모델 데이터랑 테스트 데이터 불러오는 중...", log_file)
     
-    # 학습된 모델 데이터 불러오기
+    # 학습용 특징 데이터와 라벨 불러오기
     with open(model_path, 'rb') as f:
         X_train, y_train = pickle.load(f)
         
@@ -43,12 +43,12 @@ def main():
         
     write_log(f"로딩 끝: 학습용 {len(X_train)}개, 테스트용 {len(X_test)}개\n", log_file)
     
-    # KNN 모델 객체 만들고 데이터 넣어줌 (k=5)
-    model = SimpleKNNClassifier(k=5)
+    # 단층 퍼셉트론 객체 만들고 학습 진행
+    model = SimpleSLPClassifier()
     model.fit(X_train, y_train)
     
     write_log("\n테스트 셋으로 모델 정확도 평가 시작...", log_file)
-    # 진짜 테스트 시작 (시간 좀 걸림)
+    # 진짜 테스트 시작
     predictions = model.predict(X_test)
     
     # 결과 계산
@@ -68,7 +68,7 @@ def main():
             
     # 과제 제출용 결과 출력 (예쁘게 보이려고 선 넣음)
     write_log("="*50, log_file)
-    write_log(" [결과 보고서] SnapSort KNN 모델 성능 평가", log_file)
+    write_log(" [결과 보고서] SnapSort 단층 퍼셉트론(SLP) 모델 성능 평가", log_file)
     write_log("="*50, log_file)
     
     accuracy = (correct_count / len(y_test)) * 100

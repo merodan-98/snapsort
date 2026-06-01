@@ -1,16 +1,16 @@
 import os
 import importlib.util
 
-spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
-knn = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(knn)
-SimpleKNNClassifier = knn.SimpleKNNClassifier
+spec = importlib.util.spec_from_file_location("perceptron", "2_perceptron_classifier.py")
+perceptron = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(perceptron)
+SimpleSLPClassifier = perceptron.SimpleSLPClassifier
 
 def load_full_dataset(dataset_dir):
     # 웹서버 켤때마다 매번 데이터 뽑기 귀찮아서 만든 헬퍼 함수
     X, y = [], []
     categories = ['game', 'person', 'finance']
-    classifier = SimpleKNNClassifier() 
+    classifier = SimpleSLPClassifier() 
     
     for category in categories:
         cat_dir = os.path.join(dataset_dir, category)

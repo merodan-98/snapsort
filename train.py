@@ -3,11 +3,11 @@ import pickle
 import datetime
 import importlib.util
 
-# 내가 만든 2_knn_classifier.py 임포트해옴
-spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
-knn = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(knn)
-SimpleKNNClassifier = knn.SimpleKNNClassifier
+# 2_perceptron_classifier.py 임포트해옴
+spec = importlib.util.spec_from_file_location("perceptron", "2_perceptron_classifier.py")
+perceptron = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(perceptron)
+SimpleSLPClassifier = perceptron.SimpleSLPClassifier
 
 def write_log(message, log_file):
     # 화면에 프린트도 하고 텍스트 파일에도 쓰는 함수
@@ -19,7 +19,7 @@ def load_dataset(dataset_dir):
     # 폴더 뒤져서 이미지 다 읽어오는 부분
     X, y = [], []
     categories = ['game', 'person', 'finance']
-    classifier = SimpleKNNClassifier()
+    classifier = SimpleSLPClassifier()
     
     for category in categories:
         cat_dir = os.path.join(dataset_dir, category)
@@ -64,7 +64,7 @@ def main():
     if os.path.exists(log_file):
         os.remove(log_file)
         
-    write_log(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 학습 스크립트 돌리기 시작", log_file)
+    write_log(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 퍼셉트론 학습 스크립트 시작", log_file)
     
     if not os.path.exists(dataset_dir):
         write_log("오류: dataset_augmented 폴더가 없음. 증강부터 먼저 해야됨.", log_file)
@@ -79,17 +79,22 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_ratio=0.2)
     write_log(f"데이터 쪼개기 끝: 학습용 {len(X_train)}장, 테스트용 {len(X_test)}장", log_file)
     
+    # 단층 퍼셉트론 학습 진행해 보기 (로그 확인용)
+    model = SimpleSLPClassifier()
+    model.fit(X_train, y_train)
+    
     # 뽑아놓은 데이터를 pickle로 저장해놔야 다른 스크립트에서 바로 씀
-    model_path = os.path.join(base_dir, 'knn_model.pkl')
+    model_path = os.path.join(base_dir, 'perceptron_model.pkl')
     test_data_path = os.path.join(base_dir, 'test_dataset.pkl')
     
+    # 호환성/속도 유지를 위해 raw features를 모델 pkl로 저장 (GUI, Flask가 로딩 시 퍼셉트론 피팅 수행)
     with open(model_path, 'wb') as f:
         pickle.dump((X_train, y_train), f)
         
     with open(test_data_path, 'wb') as f:
         pickle.dump((X_test, y_test), f)
         
-    write_log(f"모델 저장 완료 (이게 젤 중요한 파일임): {model_path}", log_file)
+    write_log(f"모델용 데이터셋 저장 완료 (퍼셉트론 입력용): {model_path}", log_file)
     write_log(f"테스트용 데이터도 저장함: {test_data_path}", log_file)
     write_log(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 학습 스크립트 다 돌았음", log_file)
 

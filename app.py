@@ -2,11 +2,11 @@ import os
 from flask import Flask, render_template, request, jsonify
 import importlib.util
 
-# 내 knn 모델 끌어오기
-spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
-knn = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(knn)
-SimpleKNNClassifier = knn.SimpleKNNClassifier
+# 내 퍼셉트론 모델 끌어오기
+spec = importlib.util.spec_from_file_location("perceptron", "2_perceptron_classifier.py")
+perceptron = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(perceptron)
+SimpleSLPClassifier = perceptron.SimpleSLPClassifier
 
 app = Flask(__name__)
 # 웹에서 파일 올리면 잠깐 저장해둘 폴더
@@ -28,7 +28,7 @@ train_data, test_data = combined[:split_index], combined[split_index:]
 X_train, y_train = [i[0] for i in train_data], [i[1] for i in train_data]
 X_test, y_test = [i[0] for i in test_data], [i[1] for i in test_data]
 
-model = SimpleKNNClassifier(k=5)
+model = SimpleSLPClassifier()
 model.fit(X_train, y_train)
 
 # 발표할때 화면에 띄워줄 용도로 자체 평가 한번 돌림

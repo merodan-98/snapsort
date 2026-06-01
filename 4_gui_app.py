@@ -6,10 +6,10 @@ from PIL import Image, ImageTk
 import importlib.util
 
 # 1. 뼈대되는 내 모델 불러오기
-spec = importlib.util.spec_from_file_location("knn", "2_knn_classifier.py")
-knn = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(knn)
-SimpleKNNClassifier = knn.SimpleKNNClassifier
+spec = importlib.util.spec_from_file_location("perceptron", "2_perceptron_classifier.py")
+perceptron = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(perceptron)
+SimpleSLPClassifier = perceptron.SimpleSLPClassifier
 
 IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.webp')
 CATEGORIES = ('game', 'person', 'finance')
@@ -106,7 +106,7 @@ def get_evaluation_stats(dataset_dir):
         X_train, y_train = [i[0] for i in train_data], [i[1] for i in train_data]
         X_test, y_test = [i[0] for i in test_data], [i[1] for i in test_data]
 
-        model = SimpleKNNClassifier(k=5)
+        model = SimpleSLPClassifier()
         model.fit(X_train, y_train)
 
         predictions = model.predict(X_test)
